@@ -1,12 +1,14 @@
 import db from './db.js';
 import express from 'express'
 import cors from 'cors'
+
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 app.get('/matricula', async (req, resp) => {
     try {
-        let alunos = await db.tb_matricula.findAll();
+        let alunos = await db.tb_matricula.findAll({ order: [['id_matricula', 'desc']] });
         resp.send(alunos);
     } catch (e) {
         resp.send({ erro: e.toString()})
@@ -14,23 +16,55 @@ app.get('/matricula', async (req, resp) => {
 })
 
 app.post('/matricula', async(req, resp) => {
-    try {
-        let alunos = req.body;
-
+    try { 
+        
+        let { nome, chamada, curso, turma} = req.body;
+        
         let r = await db.tb_matricula.create({
-         nm_aluno: alunos.nm_aluno,
-         nr_chamada: alunos.nr_chamada,
-         nm_curso: alunos.nm_curso,
-         nm_turma: alunos.nm_turma
-
+            nm_aluno: nome,
+            nr_chamada: chamada,
+            nm_curso: curso,
+            nm_turma: turma
         })
-        resp.send(r);
+       resp.send(r);
+
     } catch(e) {
         resp.send({ erro: e.toString()  })
     }
 })
 
+app.put('/matricula/:id', async (req, resp ) => {
+    try{
+        let {nome, chamada, curso, turma } = req.body;
+        let { id } = req.params;
 
-app.listen(process.env.PORT,
+        let r = await db.tb_matricula.update(
+            {
+                nm_aluno: nome,
+                nr_chamada: chamada,
+                nm_curso: curso,
+                nm_turma: turma
+            },
+            {
+                where: { id_matricula: id}
+            }
+        )
+        resp.sendStatus(200);
+    } catch (e) {
+        resp.send({ erro: e.toString()})
+    }
+})
 
-x => console.log(`Server up at port ${process.env.PORT}`))
+app.delete('/matricula/:id', async (req, resp ) => {
+    try{
+        let { id } = req.params;
+
+        let r = await db.tb_matricula.destroy({ where: { id_matricula: id } })
+        resp.sendStatus(200);
+    } catch (e) {
+        resp.send({ erro: e.toString()})
+    }
+})
+
+
+app.listen(process.env.PORT, x => console.log(`Server up at port ${process.env.PORT}`))
